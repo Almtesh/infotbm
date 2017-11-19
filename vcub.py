@@ -36,7 +36,7 @@ class Vcub ():
 	}
 	'''
 	def __init__ (self, autoupdate_at_creation = True, autoupdate = False, autoupdate_delay = -1):
-		self.lastupdate = 0
+		self.last_update = 0
 		self.data = None
 		if autoupdate_at_creation:
 			self.update ()
@@ -63,7 +63,13 @@ class Vcub ():
 					'location': (float (l [0]), float (l [1]))
 					}
 				self.data [int (j ['bm:IDENT'])] = e
-			self.lastupdate = time ()
+			self.last_update = time ()
+	
+	def data_age (self):
+		'''
+		Computes the data's age
+		'''
+		return (time () - self.last_update)
 	
 	def get_names (self):
 		'''
