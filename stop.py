@@ -2,7 +2,7 @@
 Provides all info from a stop
 '''
 
-from libs import get_data_from_json
+from libs import get_data_from_json, hms2seconds
 from time import time
 
 stop_schedule_url = 'http://plandynamique.infotbm.com/api/schedules?stop=%d'
@@ -16,19 +16,29 @@ def get_stop_list ():
 	# Trams
 	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/trams.xml')
 	for i in data ['arret']:
-		n = []
+		num = []
+		loc = None
+		try:
+			loc = (float (i ['x']), float (i ['y']))
+		except:
+			pass
 		if type (i ['ligne']) == dict:
-			n.append (int (i ['ligne'] ['StopPointExternalCode'].replace ('TBT', '')))
+			num.append (int (i ['ligne'] ['StopPointExternalCode'].replace ('TBT', '')))
 		else:
 			for j in i ['ligne']:
-				n.append (int (j ['StopPointExternalCode'].replace ('TBT', '')))
-		for j in n:
-			l [j] = i ['nom']
+				num.append (int (j ['StopPointExternalCode'].replace ('TBT', '')))
+		for j in num:
+			l [j] = {'name': i ['nom'], 'location': loc}
 	#Bus
 	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/bus.xml')
 	for i in data ['arret']:
 		n = int (i ['StopPointExternalCode'].replace ('TBC', ''))
-		l [n] = i ['StopName']
+		loc = None
+		try:
+			loc = (float (i ['x']), float (i ['y']))
+		except:
+			pass
+		l [n] = {'name': i ['StopName'], 'location': loc}
 	
 	return (l)
 
@@ -84,12 +94,35 @@ class Stop ():
 		Updates data
 		auto optionnal param is to set if a update is a automatic one, and must be performed as defined in autoupdate_delay variable
 		'''
-		self.data = get_data_from_json (stop_schedule_url % self.number)
-		if self.data == False:
-			self.data = None
-			self.last_update = 0
+		d = get_data_from_json (stop_schedule_url % self.number)
+		self.last_update = time ()
+		if d != False:
+			self.data = []
+			# let's simplify the data
+			for i in d:
+				l = {
+					'id': i ['code'],
+					'name': i ['name'],
+					'vehicle_type': i ['type'],
+					'vehicles': [],
+				}
+				for j in i ['schedules']:
+					loc = None
+					try:
+						loc = (float (j ['vehicle_lattitude']), float (j ['vehicle_longitude']))
+					except TypeError:
+						pass
+					l ['vehicles'].append ({
+						'id': j ['vehicle_id'],
+						'destination': j ['destination_name'],
+						'realtime': j ['realtime'] == '1',
+						'location': loc,
+						'wait_time': hms2seconds (j ['waittime']),
+						'arrival': int (self.last_update + hms2seconds (j ['waittime'])),
+					})
+				self.data.append (l)
 		else:
-			self.last_update = time ()
+			self.last_update = 0
 	
 	def data_age (self):
 		'''
@@ -110,19 +143,13 @@ class Stop ():
 			Information about a line on a stop
 			'''
 			def __init__ (self, data):
-				self.data = data
-			
-			def number (self):
-				return (self.data ['code'])
-			
-			def name (self):
-				return (self.data ['name'])
-			
-			def vehicles_type (self):
-				return (self.data ['type'])
+				self.id = data ['id']
+				self.name = data ['name']
+				self.vehicle_type = data ['vehicle_type']
+				self.ve = data ['vehicles']
 			
 			def vehicles (self):
-				return (list (range (0, len (self.data ['schedules']))))
+				return (list (range (0, len (self.ve))))
 			
 			def get_vehicle (self, vehicle):
 				class Vehicle ():
@@ -130,45 +157,28 @@ class Stop ():
 					Information about a vehicle
 					'''
 					def __init__ (self, data):
-						self.data = data
-					
-					def is_realtime (self):
-						return (self.data ['realtime'] == '1')
-					
-					def waittime (self):
-						return (self.data ['waittime'])
-					
-					def waittime_hr (self):
-						return (self.data ['waittime_text'])
-					
-					def destination (self):
-						return (self.data ['destination_name'])
-					
-					def number (self):
-						return (str (self.data ['vehicle_id']))
-					
-					def location (self):
-						try:
-							return (float (self.data ['vehicle_lattitude']), float (self.data ['vehicle_longitude']))
-						except:
-							return (None)
+						self.id = data ['id']
+						self.location = data ['location']
+						self.destination = data ['destination']
+						self.is_realtime = data ['realtime']
+						self.wait_time = data ['wait_time']
 				
-				return (Vehicle (self.data ['schedules'] [vehicle]))
+				return (Vehicle (self.ve [vehicle]))
 		
 		return (Line (self.data [line]))
 	
 
 if __name__ == '__main__':
-	stop_names = get_stop_list ()
-	for i in (3687, 1922, 5832):
-		print (str (i) + ' (' + stop_names [i] + ')')
+	stops = get_stop_list ()
+	for i in (3687, 1922, 5832, 3443, 3648):
+		print (str (i) + ' (' + stops [i] ['name'] + ') ' + str (stops [i] ['location']))
 		s = Stop (i)
 		for j in s.lines ():
 			l = s.get_line (j)
-			print ('\t' + l.vehicles_type () + ' ' + l.number () + ' (' + l.name () + ')')
+			print ('\t' + l.vehicle_type + ' ' + l.id + ' (' + l.name + ')')
 			for k in l.vehicles ():
 				v = l.get_vehicle (k)
-				if v.is_realtime ():
-					print ('\t\t' + v.waittime_hr () + ' → ' + v.destination ())
+				if v.is_realtime:
+					print ('\t\t' + str (v.wait_time) + ' → ' + v.destination)
 				else:
-					print ('\t\t~' + v.waittime_hr () + ' → ' + v.destination ())
+					print ('\t\t~' + str (v.wait_time) + ' → ' + v.destination)
