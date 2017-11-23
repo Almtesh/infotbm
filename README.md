@@ -2,7 +2,7 @@
 
 This is a set of libraries to gather data from TBM.
 
-They all work around [the mobile website](https://www.mobilinfotbm.com/nextdeparture/).
+They all work around [the dynamic map](http://plandynamique.infotbm.com).
 
 # What's TBM?
 
