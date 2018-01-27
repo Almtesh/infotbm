@@ -10,4 +10,4 @@ TBM is a french compagny that operates Bordeaux's public transportation.
 
 # Licence
 
-These libraries are under GNU GPL v3. See [licence](LICENCE) for more details.
+These libraries are under GNU GPL v3. See [license](LICENSE) for more details.
