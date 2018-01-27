@@ -75,7 +75,7 @@ class Stop ():
 					vehicle_longitude: float,
 					vehicle_position_updated_at: str, # last update from vehicle
 					waittime: str, # estimated wait time in %H:%M:%S format
-					waittime_text: str # human readable estimated wait time written in French
+					waittime_text: str, # human readable estimated wait time written in French
 				},
 			],
 		}
@@ -162,6 +162,7 @@ class Stop ():
 						self.destination = data ['destination']
 						self.is_realtime = data ['realtime']
 						self.wait_time = data ['wait_time']
+						self.arrival = data ['arrival']
 				
 				return (Vehicle (self.ve [vehicle]))
 		
@@ -169,6 +170,7 @@ class Stop ():
 	
 
 if __name__ == '__main__':
+	from datetime import datetime
 	stops = get_stop_list ()
 	for i in (3687, 1922, 5832, 3443, 3648):
 		print (str (i) + ' (' + stops [i] ['name'] + ') ' + str (stops [i] ['location']))
@@ -179,6 +181,6 @@ if __name__ == '__main__':
 			for k in l.vehicles ():
 				v = l.get_vehicle (k)
 				if v.is_realtime:
-					print ('\t\t' + str (v.wait_time) + ' → ' + v.destination)
+					print ('\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
 				else:
-					print ('\t\t~' + str (v.wait_time) + ' → ' + v.destination)
+					print ('\t\t~' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
