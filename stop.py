@@ -11,7 +11,7 @@ def get_stop_list ():
 	'''
 	Gets stop name after its number
 	'''
-	l = {}
+	stop_list = {}
 	
 	# Trams
 	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/trams.xml')
@@ -20,7 +20,7 @@ def get_stop_list ():
 		loc = None
 		try:
 			loc = (float (i ['x']), float (i ['y']))
-		except:
+		except (KeyError, ValueError, TypeError):
 			pass
 		if type (i ['ligne']) == dict:
 			num.append (int (i ['ligne'] ['StopPointExternalCode'].replace ('TBT', '')))
@@ -28,19 +28,19 @@ def get_stop_list ():
 			for j in i ['ligne']:
 				num.append (int (j ['StopPointExternalCode'].replace ('TBT', '')))
 		for j in num:
-			l [j] = {'name': i ['nom'], 'location': loc}
-	#Bus
+			stop_list [j] = {'name': i ['nom'], 'location': loc}
+	# Bus
 	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/bus.xml')
 	for i in data ['arret']:
 		n = int (i ['StopPointExternalCode'].replace ('TBC', ''))
 		loc = None
 		try:
 			loc = (float (i ['x']), float (i ['y']))
-		except:
+		except (KeyError, ValueError, TypeError):
 			pass
-		l [n] = {'name': i ['StopName'], 'location': loc}
+		stop_list [n] = {'name': i ['StopName'], 'location': loc}
 	
-	return (l)
+	return (stop_list)
 
 class Stop ():
 	'''
@@ -96,11 +96,11 @@ class Stop ():
 		'''
 		d = get_data_from_json (stop_schedule_url % self.number)
 		self.last_update = time ()
-		if d != False:
+		if type (d) == list:
 			self.data = []
 			# let's simplify the data
 			for i in d:
-				l = {
+				line = {
 					'id': i ['code'],
 					'name': i ['name'],
 					'vehicle_type': i ['type'],
@@ -112,7 +112,7 @@ class Stop ():
 						loc = (float (j ['vehicle_lattitude']), float (j ['vehicle_longitude']))
 					except TypeError:
 						pass
-					l ['vehicles'].append ({
+					line ['vehicles'].append ({
 						'id': j ['vehicle_id'],
 						'destination': j ['destination_name'],
 						'realtime': j ['realtime'] == '1',
@@ -120,7 +120,7 @@ class Stop ():
 						'wait_time': hms2seconds (j ['waittime']),
 						'arrival': int (self.last_update + hms2seconds (j ['waittime'])),
 					})
-				self.data.append (l)
+				self.data.append (line)
 		else:
 			self.last_update = 0
 	
@@ -176,10 +176,10 @@ if __name__ == '__main__':
 		print (str (i) + ' (' + stops [i] ['name'] + ') ' + str (stops [i] ['location']))
 		s = Stop (i)
 		for j in s.lines ():
-			l = s.get_line (j)
-			print ('\t' + l.vehicle_type + ' ' + l.id + ' (' + l.name + ')')
-			for k in l.vehicles ():
-				v = l.get_vehicle (k)
+			line = s.get_line (j)
+			print ('\t' + line.vehicle_type + ' ' + line.id + ' (' + line.name + ')')
+			for k in line.vehicles ():
+				v = line.get_vehicle (k)
 				if v.is_realtime:
 					print ('\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
 				else:

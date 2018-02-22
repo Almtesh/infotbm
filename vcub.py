@@ -48,20 +48,20 @@ class Vcub ():
 		'''
 		d = get_data_from_json (vcub_url)
 		# the original format is awfull, so I change it a little
-		if d != False:
+		if type (d) == dict:
 			self.data = {}
 			d = d ['FeatureCollection']['gml:featureMember']
 			for i in d:
 				j = i ['bm:CI_VCUB_P']
-				l = j ['bm:geometry'] ['gml:Point'] ['gml:pos'].split (' ')
+				loc = j ['bm:geometry'] ['gml:Point'] ['gml:pos'].split (' ')
 				e = {
 					'name': j ['bm:NOM'],
 					'online': j ['bm:ETAT'] == 'CONNECTEE',
 					'plus': j['bm:TYPE'] == 'VLS+',
 					'empty': int (j ['bm:NBPLACES']),
 					'bikes': int (j ['bm:NBVELOS']),
-					'location': (float (l [0]), float (l [1]))
-					}
+					'location': (float (loc [0]), float (loc [1]))
+				}
 				self.data [int (j ['bm:IDENT'])] = e
 			self.last_update = time ()
 	
@@ -111,6 +111,7 @@ class Vcub ():
 				return (self.id)
 		
 		return (Station (self.data [id], id))
+
 
 if __name__ == '__main__':
 	v = Vcub ()

@@ -24,5 +24,5 @@ def hms2seconds (hhmmss):
 		cut_string = hhmmss.split (':')
 		cut_time = (int (cut_string [0]), int (cut_string [1]), int (cut_string [2]))
 		return (3600 * cut_time [0] + 60 * cut_time [1] + cut_time [2])
-	except:
+	except (IndexError, ValueError, TypeError):
 		return (0)
