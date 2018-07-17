@@ -5,34 +5,26 @@ Provides all info about V³ stations
 from libs import get_data_from_json
 from time import time
 
-vcub_url = 'http://plandynamique.infotbm.com/api/vcub'
+vcub_url = 'https://ws.infotbm.com/ws/1.0/vcubs'
 
 class Vcub ():
 	'''
-	Gather V³ stations informations
+	Récupère les informations des stations V³
 	
-	data format as returned by infotbm:
+	Format de données, tel que retourné par le site infotbm :
 	{
-		FeatureCollection: {
-			gml:featureMember: [
-				{
-					bm:CI_VCUB_P: {
-						bm:ETAT: str, # CONNECTEE if on, DECONNECTEE either
-						bm:TYPE: str, # VLS+ for V³+ and VLS for regular V³ station
-						gml:boundedBy: dict,
-						gml:id: str,
-						bm:NBPLACES: int, # empty spaces
-						bm:GID: int,
-						bm:NBVELOS: int, # available bikes
-						bm:HEURE: str,
-						bm:IDENT: int, # id as written on the station
-						bm:geometry: dict,
-						bm:NOM: str, # HR name
-					},
-				},
-			],
-			... # the rest is quite useless internal data
-		},
+		lists: [
+			{
+				'id': numéro de la station,
+				'name': str,
+				'connexionState': 'CONNECTEE' si en service 'DECONNECTEE' sinon,
+				'typeVlsPlus': 'VLS_PLUS' si V³+ 'PAS_VLS_PLUS' sinon,
+				'nbPlaceAvailable': 33,
+				'nbBikeAvailable': 0
+				'latitude': float,
+				'longitude': float,
+			},
+		]
 	}
 	'''
 	def __init__ (self, autoupdate_at_creation = True, autoupdate = False, autoupdate_delay = -1):
@@ -50,19 +42,17 @@ class Vcub ():
 		# the original format is awfull, so I change it a little
 		if type (d) == dict:
 			self.data = {}
-			d = d ['FeatureCollection']['gml:featureMember']
+			d = d ['lists']
 			for i in d:
-				j = i ['bm:CI_VCUB_P']
-				loc = j ['bm:geometry'] ['gml:Point'] ['gml:pos'].split (' ')
 				e = {
-					'name': j ['bm:NOM'],
-					'online': j ['bm:ETAT'] == 'CONNECTEE',
-					'plus': j['bm:TYPE'] == 'VLS+',
-					'empty': int (j ['bm:NBPLACES']),
-					'bikes': int (j ['bm:NBVELOS']),
-					'location': (float (loc [0]), float (loc [1]))
+					'name': i ['name'],
+					'online': i ['connexionState'] == 'CONNECTEE',
+					'plus': i ['typeVlsPlus'] == 'VLS_PLUS',
+					'empty': int (i ['nbPlaceAvailable']),
+					'bikes': int (i ['nbBikeAvailable']),
+					'location': (float (i ['latitude']), float (i ['longitude']))
 				}
-				self.data [int (j ['bm:IDENT'])] = e
+				self.data [int (i ['id'])] = e
 			self.last_update = time ()
 	
 	def data_age (self):
