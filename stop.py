@@ -1,89 +1,38 @@
 '''
-Provides all info from a stop
+Fourni les informations sur les arrêts
 '''
 
 from libs import get_data_from_json, hms2seconds
 from time import time
 
-stop_schedule_url = 'http://plandynamique.infotbm.com/api/schedules?stop=%d'
+stop_schedule_url = 'https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s'
 
-def get_stop_list ():
-	'''
-	Gets stop name after its number
-	'''
-	stop_list = {}
-	
-	# Trams
-	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/trams.xml')
-	for i in data ['arret']:
-		num = []
-		loc = None
-		try:
-			loc = (float (i ['x']), float (i ['y']))
-		except (KeyError, ValueError, TypeError):
-			pass
-		if type (i ['ligne']) == dict:
-			num.append (int (i ['ligne'] ['StopPointExternalCode'].replace ('TBT', '')))
-		else:
-			for j in i ['ligne']:
-				num.append (int (j ['StopPointExternalCode'].replace ('TBT', '')))
-		for j in num:
-			stop_list [j] = {'name': i ['nom'], 'location': loc}
-	# Bus
-	data = get_data_from_json ('http://plandynamique.infotbm.com/api/file/bus.xml')
-	for i in data ['arret']:
-		n = int (i ['StopPointExternalCode'].replace ('TBC', ''))
-		loc = None
-		try:
-			loc = (float (i ['x']), float (i ['y']))
-		except (KeyError, ValueError, TypeError):
-			pass
-		stop_list [n] = {'name': i ['StopName'], 'location': loc}
-	
-	return (stop_list)
 
 class Stop ():
 	'''
-	Gather stop informations
+	Récupère les informations sur un arrêt
 	
 	data format as returned by infotbm:
-	[
-		{
-			origin: str, # source de l'information, BDSI tout le temps semble-t-il
-			type: str, # type de ligne (Bus, Tramway, Ferry)
-			message: str,
-			code: str, # nom de la ligne
-			name: str, # nom complet de la ligne
-			schedules: [
+	Format des données retournées pas le site
+	{
+		destinations: {
+			<destination_stop_id>: [
 				{
-					arrival: str,
-					arrival_commande: str,
-					arrival_theorique: str,
-					comment: str,
-					departure: str,
-					departure_commande: str,
-					departure_theorique: str,
-					destination_id: int,
-					destination_name: str,
-					origin: str,
-					realtime: int,
-					schedule_id: int,
-					trip_id: int,
-					updated_at: str, # last data update
-					vehicle_id: int,
-					vehicle_lattitude: float,
-					vehicle_longitude: float,
-					vehicle_position_updated_at: str, # last update from vehicle
-					waittime: str, # estimated wait time in %H:%M:%S format
-					waittime_text: str, # human readable estimated wait time written in French
+					destination_name: str
+					realtime: 1 si suivi, 0 sinon
+					vehicle_id: str
+					vehicle_lattitude: float
+					vehicle_longitude: float
+					waittime: HH:MM:SS
 				},
-			],
+			]
 		}
-	]
+	}
 	'''
 	
-	def __init__ (self, number, autoupdate_at_creation = True, autoupdate = False, autoupdate_delay = -1):
+	def __init__ (self, number, line, autoupdate_at_creation = True, autoupdate = False, autoupdate_delay = -1):
 		self.number = number
+		self.line = line
 		self.last_update = 0
 		self.data = None
 		if autoupdate_at_creation:
@@ -91,62 +40,45 @@ class Stop ():
 	
 	def update (self, auto = False):
 		'''
-		Updates data
-		auto optionnal param is to set if a update is a automatic one, and must be performed as defined in autoupdate_delay variable
+		Met à jour les données
 		'''
-		d = get_data_from_json (stop_schedule_url % self.number)
+		d = get_data_from_json (stop_schedule_url % (self.number, self.line)) ['destinations']
 		self.last_update = time ()
-		if type (d) == list:
+		if type (d) == dict:
 			self.data = []
 			# let's simplify the data
 			for i in d:
-				line = {
-					'id': i ['code'],
-					'name': i ['name'],
-					'vehicle_type': i ['type'],
-					'vehicles': [],
-				}
-				for j in i ['schedules']:
+				for j in d [i]:
 					loc = None
 					try:
 						loc = (float (j ['vehicle_lattitude']), float (j ['vehicle_longitude']))
 					except TypeError:
 						pass
-					line ['vehicles'].append ({
+					vehicle = {
 						'id': j ['vehicle_id'],
 						'destination': j ['destination_name'],
 						'realtime': j ['realtime'] == '1',
 						'location': loc,
 						'wait_time': hms2seconds (j ['waittime']),
 						'arrival': int (self.last_update + hms2seconds (j ['waittime'])),
-					})
-				self.data.append (line)
+					}
+					self.data.append (vehicle)
 		else:
 			self.last_update = 0
 	
 	def data_age (self):
 		'''
-		Computes the data's age
+		Retourne l'âge des données
 		'''
 		return (time () - self.last_update)
 	
-	def lines (self):
-		'''
-		List lines on the stop
-		Return unique indexes as known by the class
-		'''
-		return (list (range (0, len (self.data))))
-	
-	def get_line (self, line):
+	def get_line (self):
 		class Line ():
 			'''
-			Information about a line on a stop
+			Information sur la ligne déservie à un arrêt
 			'''
 			def __init__ (self, data):
-				self.id = data ['id']
-				self.name = data ['name']
-				self.vehicle_type = data ['vehicle_type']
-				self.ve = data ['vehicles']
+				self.ve = data
 			
 			def vehicles (self):
 				return (list (range (0, len (self.ve))))
@@ -154,7 +86,7 @@ class Stop ():
 			def get_vehicle (self, vehicle):
 				class Vehicle ():
 					'''
-					Information about a vehicle
+					Information sur un passage de véhicule
 					'''
 					def __init__ (self, data):
 						self.id = data ['id']
@@ -166,21 +98,18 @@ class Stop ():
 				
 				return (Vehicle (self.ve [vehicle]))
 		
-		return (Line (self.data [line]))
+		return (Line (self.data))
 	
 
 if __name__ == '__main__':
 	from datetime import datetime
-	stops = get_stop_list ()
-	for i in (3687, 1922, 5832, 3443, 3648):
-		print (str (i) + ' (' + stops [i] ['name'] + ') ' + str (stops [i] ['location']))
-		s = Stop (i)
-		for j in s.lines ():
-			line = s.get_line (j)
-			print ('\t' + line.vehicle_type + ' ' + line.id + ' (' + line.name + ')')
-			for k in line.vehicles ():
-				v = line.get_vehicle (k)
-				if v.is_realtime:
-					print ('\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
-				else:
-					print ('\t\t~' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
+	for i in ((3687, 'A'), (1922, '32')):
+		s = Stop (i [0], i [1])
+		line = s.get_line ()
+		print ('\t' + i [1])
+		for k in line.vehicles ():
+			v = line.get_vehicle (k)
+			if v.is_realtime:
+				print ('\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
+			else:
+				print ('\t\t~' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
