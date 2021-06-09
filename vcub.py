@@ -21,6 +21,7 @@ class Vcub ():
 				'typeVlsPlus': 'VLS_PLUS' si V³+ 'PAS_VLS_PLUS' sinon,
 				'nbPlaceAvailable': 33,
 				'nbBikeAvailable': 0
+				'nbElectricBikeAvailable': 6
 				'latitude': float,
 				'longitude': float,
 			},
@@ -50,6 +51,7 @@ class Vcub ():
 					'plus': i ['typeVlsPlus'] == 'VLS_PLUS',
 					'empty': int (i ['nbPlaceAvailable']),
 					'bikes': int (i ['nbBikeAvailable']),
+					'ebikes': int (i ['nbElectricBikeAvailable']),
 					'location': (float (i ['latitude']), float (i ['longitude']))
 				}
 				self.data [int (i ['id'])] = e
@@ -95,6 +97,7 @@ class Vcub ():
 				self.online = self.data ['online']
 				self.isplus = self.data ['plus']
 				self.bikes = self.data ['bikes']
+				self.ebikes = self.data ['ebikes']
 				self.empty = self.data ['empty']
 			
 			def __int__ (self):
@@ -106,4 +109,4 @@ class Vcub ():
 if __name__ == '__main__':
 	v = Vcub ()
 	for i in (v.get_by_id (149), v.get_by_id (v.get_names ()['Buttiniere']), v.get_by_id (v.get_locations () [(44.8875, -0.51763)])):
-		print ('%s (%d) (%f, %f)%s%s\n\tbikes: %d\n\tfree: %d\n\t' % (i.name, i, i.location [0], i.location [1], i.isplus and ' (VCUB+)' or '', i.online and ' ' or ' OFFLINE', i.bikes, i.empty))
+		print ('%s (%d) (%f, %f)%s%s\n\tbikes: %d\n\te-bikes: %d\n\tfree: %d\n\t' % (i.name, i, i.location [0], i.location [1], i.isplus and ' (VCUB+)' or '', i.online and ' ' or ' OFFLINE', i.bikes, i.ebikes, i.empty))
