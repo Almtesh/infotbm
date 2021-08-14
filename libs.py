@@ -6,6 +6,7 @@ from json import loads as read_json
 from urllib import request
 from urllib.error import HTTPError
 
+
 def get_data_from_json (url):
 	'''
 	gets data from json at url
@@ -15,6 +16,7 @@ def get_data_from_json (url):
 		return (read_json (opener.open (url).read ().decode ('utf8')))
 	except HTTPError:
 		return (None)
+
 
 def hms2seconds (hhmmss):
 	'''

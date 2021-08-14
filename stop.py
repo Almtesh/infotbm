@@ -4,8 +4,26 @@ Fourni les informations sur les arrêts
 
 from libs import get_data_from_json, hms2seconds
 from time import time
+from urllib.parse import quote_plus
 
+search_stop_url = 'https://ws.infotbm.com/ws/1.0/get-schedule/%s'
+stop_info_url = 'https://ws.infotbm.com/ws/1.0/network/stoparea-informations/%s'
 stop_schedule_url = 'https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s'
+
+
+def search_stop_name (keyword):
+	'''
+	Recherche la référence d'un nom d'arrêt
+	'''
+	d = get_data_from_json (search_stop_url % quote_plus (keyword))
+	r = []
+	for i in d:
+		r.append ({
+			'name': i ['name'],
+			'city': i ['city'],
+			'ref': i ['id'],
+		})
+	return (r)
 
 
 class Stop ():
@@ -103,7 +121,9 @@ class Stop ():
 
 if __name__ == '__main__':
 	from datetime import datetime
-	for i in ((3687, 'A'), (1922, '32')):
+	print (search_stop_name ('Réinson'))
+	print (search_stop_name ('Gravière'))
+	for i in ((3687, 'A'), (5459, '32')):
 		s = Stop (i [0], i [1])
 		line = s.get_line ()
 		print ('\t' + i [1])

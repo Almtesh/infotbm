@@ -7,6 +7,7 @@ from time import time
 
 vcub_url = 'https://ws.infotbm.com/ws/1.0/vcubs'
 
+
 class Vcub ():
 	'''
 	Récupère les informations des stations V³
@@ -108,5 +109,5 @@ class Vcub ():
 
 if __name__ == '__main__':
 	v = Vcub ()
-	for i in (v.get_by_id (149), v.get_by_id (v.get_names ()['Buttiniere']), v.get_by_id (v.get_locations () [(44.8875, -0.51763)])):
+	for i in (v.get_by_id (149), v.get_by_id (v.get_names () ['Buttiniere']), v.get_by_id (v.get_locations () [(44.8875, -0.51763)])):
 		print ('%s (%d) (%f, %f)%s%s\n\tbikes: %d\n\te-bikes: %d\n\tfree: %d\n\t' % (i.name, i, i.location [0], i.location [1], i.isplus and ' (VCUB+)' or '', i.online and ' ' or ' OFFLINE', i.bikes, i.ebikes, i.empty))
