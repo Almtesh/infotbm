@@ -4,33 +4,102 @@ Fourni les informations sur les arrêts
 
 from libs import get_data_from_json, hms2seconds
 from time import time
-from urllib.parse import quote_plus
+from urllib.parse import quote
+from re import search
 
 search_stop_url = 'https://ws.infotbm.com/ws/1.0/get-schedule/%s'
 stop_info_url = 'https://ws.infotbm.com/ws/1.0/network/stoparea-informations/%s'
 stop_schedule_url = 'https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s'
 
 
-def search_stop_name (keyword):
+def search_stop_by_name (keyword):
 	'''
 	Recherche la référence d'un nom d'arrêt
+	
+	Format des données retournées par le site
+	[
+		{
+			id: str, nommé ref par la suite
+			name: str
+			type: str, mais je ne gère que "stop_area"
+			city: str
+		},
+	]
 	'''
-	d = get_data_from_json (search_stop_url % quote_plus (keyword))
+	d = get_data_from_json (search_stop_url % quote (keyword))
 	r = []
 	for i in d:
-		r.append ({
-			'name': i ['name'],
-			'city': i ['city'],
-			'ref': i ['id'],
-		})
+		if i ['type'] == 'stop_area':
+			r.append ({
+				'name': i ['name'],
+				'city': i ['city'],
+				'ref': i ['id'],
+			})
 	return (r)
 
 
-class Stop ():
+def show_stops_from_ref (ref):
+	'''
+	Affiche la liste des arrêts d'une référence donnée par search_stop_name
+	
+	Format des données retournées par le site
+	{
+		id: str, contenu de la variable ref donnée
+		name: str
+		latitude: str, convertible en float
+		longitude: str, convertible en float
+		city: str
+		hasWheelchairBoarding: bool, accessibilité en fauteuil roulant
+		stopPoints: [
+			id: str
+			name: str, encore le nom
+			routes: [
+				{
+					id: str
+					name: str, nom du terminus
+					line: {
+						name: str, nom pour les humains
+					}
+				}
+			]
+		]
+	}
+	'''
+	d = get_data_from_json (stop_info_url % quote (ref))
+	r = {
+		'ref': d ['id'],
+		'name': d ['name'],
+		'latitude': float (d ['latitude']),
+		'longitude': float (d ['longitude']),
+		'city': d ['city'],
+		'stop_points': [],
+	}
+	for i in d ['stopPoints']:
+		s = {
+			'name': i ['name'],
+			'routes': [],
+		}
+		s ['id'] = int (search ('[0-9]+$', i ['id']).group ())
+		for j in i ['routes']:
+			rte = {
+				'terminus': j ['name'],
+				'line_human': j ['line'] ['name'],
+			}
+			line_id = search ('[0-9A-D]+$', rte ['line_human']).group ()
+			try:
+				line_id = '%02d' % int (line_id)
+			except ValueError:
+				pass
+			rte ['line_id'] = line_id
+			s ['routes'].append (rte)
+		r ['stop_points'].append (s)
+	return (r)
+
+
+class StopRoute ():
 	'''
 	Récupère les informations sur un arrêt
 	
-	data format as returned by infotbm:
 	Format des données retournées pas le site
 	{
 		destinations: {
@@ -42,6 +111,7 @@ class Stop ():
 					vehicle_lattitude: float
 					vehicle_longitude: float
 					waittime: HH:MM:SS
+					waittime_text: str, lisible pas un humain
 				},
 			]
 		}
@@ -78,6 +148,7 @@ class Stop ():
 						'realtime': j ['realtime'] == '1',
 						'location': loc,
 						'wait_time': hms2seconds (j ['waittime']),
+						'wait_time_human': j ['waittime_text'],
 						'arrival': int (self.last_update + hms2seconds (j ['waittime'])),
 					}
 					self.data.append (vehicle)
@@ -99,7 +170,9 @@ class Stop ():
 				self.ve = data
 			
 			def vehicles (self):
-				return (list (range (0, len (self.ve))))
+				if self.ve is not None:
+					return (list (range (0, len (self.ve))))
+				return ([])
 			
 			def get_vehicle (self, vehicle):
 				class Vehicle ():
@@ -112,6 +185,7 @@ class Stop ():
 						self.destination = data ['destination']
 						self.is_realtime = data ['realtime']
 						self.wait_time = data ['wait_time']
+						self.wait_time_text = data ['wait_time_human']
 						self.arrival = data ['arrival']
 				
 				return (Vehicle (self.ve [vehicle]))
@@ -121,15 +195,19 @@ class Stop ():
 
 if __name__ == '__main__':
 	from datetime import datetime
-	print (search_stop_name ('Réinson'))
-	print (search_stop_name ('Gravière'))
-	for i in ((3687, 'A'), (5459, '32')):
-		s = Stop (i [0], i [1])
-		line = s.get_line ()
-		print ('\t' + i [1])
-		for k in line.vehicles ():
-			v = line.get_vehicle (k)
-			if v.is_realtime:
-				print ('\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
-			else:
-				print ('\t\t~' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
+	for word in ('Gravière', 'Stade Chaban Delmas', 'Cassagne', 'Zorbut'):
+		print (word + ':')
+		for area in search_stop_by_name (word):
+			print ('\t' + area ['name'] + ' (' + area ['city'] + '):')
+			for stop in show_stops_from_ref (area ['ref']) ['stop_points']:
+				print ('\t\t' + stop ['name'] + ' (' + str (stop ['id']) + '):')
+				for route in stop ['routes']:
+					print ('\t\t\t' + route ['line_human'] + ' terminus ' + route ['terminus'] + ':')
+					sr = StopRoute (stop ['id'], route ['line_id'])
+					line = sr.get_line ()
+					for vehicle in line.vehicles ():
+						v = line.get_vehicle (vehicle)
+						if v.is_realtime:
+							print ('\t\t\t\t' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
+						else:
+							print ('\t\t\t\t~' + str (v.wait_time) + ' (' + datetime.fromtimestamp (v.arrival).strftime ('%H:%M') + ') → ' + v.destination)
