@@ -152,6 +152,7 @@ class StopRoute ():
 						'arrival': int (self.last_update + hms2seconds (j ['waittime'])),
 					}
 					self.data.append (vehicle)
+			self.data = sorted (self.data, key = lambda item: item ['arrival'])
 		else:
 			self.last_update = 0
 	
