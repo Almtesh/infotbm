@@ -17,7 +17,16 @@ line_types = (
 	'Lianes',
 	'Ligne',
 	'Bus Relais',
+	'Citéis',
 )
+line_translate = {
+	'Tram A': 'A',
+	'Tram B': 'B',
+	'Tram C': 'C',
+	'Tram D': 'D',
+	'TBNight': '58',
+	'BAT3': '69',
+}
 
 
 def search_stop_by_name (keyword):
@@ -93,20 +102,21 @@ def show_stops_from_ref (ref):
 				'terminus': j ['name'],
 				'line_human': j ['line'] ['name'],
 			}
-			try:
-				line_id = search ('[0-9A-D]+$', rte ['line_human']).group ()
-			except AttributeError:
-				continue
-			try:
+			add = False
+			if rte ['line_human'] in line_translate:
+				line_id = line_translate [rte ['line_human']]
+				add = True
+			else:
+				try:
+					line_id = search ('[0-9]+$', rte ['line_human']).group ()
+				except AttributeError:
+					continue
 				line_id = '%02d' % int (line_id)
-			except ValueError:
-				pass
-			a = False
-			for i in line_types:
-				if rte ['line_human'] [0:len (i)] == i:
-					a = True
-					break
-			if a:
+				for i in line_types:
+					if rte ['line_human'] [0:len (i)] == i:
+						add = True
+						break
+			if add:
 				rte ['line_id'] = line_id
 				s ['routes'].append (rte)
 		r ['stop_points'].append (s)
