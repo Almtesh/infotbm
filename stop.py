@@ -119,7 +119,8 @@ def show_stops_from_ref (ref):
 			if add:
 				rte ['line_id'] = line_id
 				s ['routes'].append (rte)
-		r ['stop_points'].append (s)
+		if s ['routes'] != []:
+			r ['stop_points'].append (s)
 	return (r)
 
 
