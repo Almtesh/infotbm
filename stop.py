@@ -11,6 +11,14 @@ search_stop_url = 'https://ws.infotbm.com/ws/1.0/get-schedule/%s'
 stop_info_url = 'https://ws.infotbm.com/ws/1.0/network/stoparea-informations/%s'
 stop_schedule_url = 'https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s'
 
+line_types = (
+	'Tram',
+	'Corol',
+	'Lianes',
+	'Ligne',
+	'Bus Relais',
+)
+
 
 def search_stop_by_name (keyword):
 	'''
@@ -85,13 +93,22 @@ def show_stops_from_ref (ref):
 				'terminus': j ['name'],
 				'line_human': j ['line'] ['name'],
 			}
-			line_id = search ('[0-9A-D]+$', rte ['line_human']).group ()
+			try:
+				line_id = search ('[0-9A-D]+$', rte ['line_human']).group ()
+			except AttributeError:
+				continue
 			try:
 				line_id = '%02d' % int (line_id)
 			except ValueError:
 				pass
-			rte ['line_id'] = line_id
-			s ['routes'].append (rte)
+			a = False
+			for i in line_types:
+				if rte ['line_human'] [0:len (i)] == i:
+					a = True
+					break
+			if a:
+				rte ['line_id'] = line_id
+				s ['routes'].append (rte)
 		r ['stop_points'].append (s)
 	return (r)
 
@@ -130,7 +147,11 @@ class StopRoute ():
 		'''
 		Met à jour les données
 		'''
-		d = get_data_from_json (stop_schedule_url % (self.number, self.line)) ['destinations']
+		d = get_data_from_json (stop_schedule_url % (self.number, self.line))
+		if 'destinations' in d:
+			d = d ['destinations']
+		else:
+			return ()
 		self.last_update = time ()
 		if type (d) == dict:
 			self.data = []
@@ -196,7 +217,7 @@ class StopRoute ():
 
 if __name__ == '__main__':
 	from datetime import datetime
-	for word in ('Gravière', 'Stade Chaban Delmas', 'Cassagne', 'Zorbut'):
+	for word in ('Gravière', 'Gare Saint Jean', 'Quinconces', 'Zorbut'):
 		print (word + ':')
 		for area in search_stop_by_name (word):
 			print ('\t' + area ['name'] + ' (' + area ['city'] + '):')
