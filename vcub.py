@@ -32,18 +32,21 @@ class Vcub ():
 	def __init__ (self, autoupdate_at_creation = None, autoupdate = False, autoupdate_delay = -1, data = None):
 		self.last_update = 0
 		if type (data) == dict:
-			self.data = data
+			self.data = self.update (data = data)
 		else:
 			self.data = None
 		if autoupdate_at_creation or (autoupdate_at_creation is None and self.data is None):
 			self.update ()
 	
-	def update (self, auto = False):
+	def update (self, auto = False, data = None):
 		'''
 		Updates data
 		auto optionnal param is to set if a update is a automatic one, and must be performed as defined in autoupdate_delay variable
 		'''
-		d = get_data_from_json (vcub_url)
+		if data is None or type (data) != dict:
+			d = get_data_from_json (vcub_url)
+		else:
+			d = data
 		# the original format is awfull, so I change it a little
 		if type (d) == dict:
 			self.data = {}
@@ -112,8 +115,8 @@ class Vcub ():
 
 if __name__ == '__main__':
 	v = Vcub ()
-	for i in (v.get_by_id (149), v.get_by_id (v.get_names () ['Buttiniere'])):
+	for i in (v.get_by_id (149), v.get_by_id (v.get_names () ['Buttiniere']), ):
 		print ('%s (%d) (%f, %f)%s%s\n\tbikes: %d\n\te-bikes: %d\n\tfree: %d\n\t' % (i.name, i, i.location [0], i.location [1], i.isplus and ' (VCUB+)' or '', i.online and ' ' or ' OFFLINE', i.bikes, i.ebikes, i.empty))
-	v = Vcub (data = v.data)
+	v = Vcub (data = get_data_from_json (vcub_url))
 	for i in (v.get_by_id (v.get_locations () [(44.8875, -0.51763)]), ):
 		print ('%s (%d) (%f, %f)%s%s\n\tbikes: %d\n\te-bikes: %d\n\tfree: %d\n\t' % (i.name, i, i.location [0], i.location [1], i.isplus and ' (VCUB+)' or '', i.online and ' ' or ' OFFLINE', i.bikes, i.ebikes, i.empty))
