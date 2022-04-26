@@ -2,8 +2,6 @@ from src.stop import *
 import sys
 from datetime import datetime
 from gmplot import gmplot
-import imgkit
-
 
 if __name__ == "__main__":
     for word in sys.argv[1:]:
@@ -27,4 +25,3 @@ if __name__ == "__main__":
                         gmap = gmplot.GoogleMapPlotter(v.location[0], v.location[1], 13)
                         gmap.marker(v.location[0], v.location[1], "cornflowerblue")
                         gmap.draw("map.html")
-                        imgkit.from_file("map.html", "map.pdf")
