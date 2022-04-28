@@ -7,6 +7,7 @@ authors = ["mdeboute <martin.deboute@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 gmplot = "^1.4.1"
+tweepy = "^4.8.0"
 
 [tool.poetry.dev-dependencies]
 

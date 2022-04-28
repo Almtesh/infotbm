@@ -5,3 +5,6 @@ __pycache__/
 # Poetry venv directories and files
 .venv/
 poetry.lock
+
+# Keys and tokens of the Twitter API
+credentials.py

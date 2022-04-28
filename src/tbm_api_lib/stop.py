@@ -2,7 +2,7 @@
 Provides stop information
 """
 
-from src.libs import get_data_from_json, hms2seconds
+from tbm_api_lib.libs import get_data_from_json, hms2seconds
 from time import time
 from urllib.parse import quote
 from re import search
