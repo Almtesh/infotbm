@@ -2,7 +2,7 @@
 Provides all info about V³ stations
 """
 
-from tbm_api_lib.libs import get_data_from_json
+from tbm_api.utils import get_data_from_json
 from time import time
 
 vcub_url = "https://ws.infotbm.com/ws/1.0/vcubs"

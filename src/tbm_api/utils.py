@@ -1,7 +1,3 @@
-"""
-Common libraries
-"""
-
 from json import loads as read_json
 from urllib import request
 from urllib.error import HTTPError

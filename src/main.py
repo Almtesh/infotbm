@@ -1,43 +1,43 @@
-from tbm_api_lib.stop import *
 import sys
+from tbm_api.stop_area import *
+from tbm_api.stop import *
+from tbm_api.stop_route import StopRoute
 from datetime import datetime
-from gmplot import gmplot
+
 
 if __name__ == "__main__":
     for word in sys.argv[1:]:
-        for area in search_stop_by_name(word):
-            for stop in show_stops_from_ref(area["ref"])["stop_points"]:
-                for route in stop["routes"]:
-                    if "Tram" in route["line_human"]:
-                        sr = StopRoute(stop["id"], route["line_id"])
-                        line = sr.get_line()
-                        for vehicule in line.vehicles():
+        for area in get_stop_areas_by_name(word):
+            stop = get_stop_by_id(area.getId())
+            for stopPoint in stop.getStopPoints():
+                for route in stopPoint.getRoutes():
+                    if "Tram" in route.getLineName():
+                        stopRoute = StopRoute(stopPoint.getId(), route.getId())
+                        line = stopRoute.get_line()
+                        for vehicule in line.get_vehicles():
                             v = line.get_vehicle(vehicule)
-                            if v.is_realtime:
+                            if v.getRealtime():
                                 print(
-                                    str(v.wait_time_text)
+                                    str(v.getWaitTimeText())
                                     + " ("
-                                    + datetime.fromtimestamp(v.arrival).strftime(
+                                    + datetime.fromtimestamp(v.getArrival()).strftime(
                                         "%H:%M"
                                     )
                                     + ") → "
-                                    + v.destination
-                                    + " "
-                                    + str(v.location)
+                                    + v.getDestination()
+                                    + ", Curr location: "
+                                    + str(v.getLocation())
                                 )
                             else:
                                 print(
                                     "~"
-                                    + str(v.wait_time_text)
+                                    + str(v.getWaitTimeText())
                                     + " ("
-                                    + datetime.fromtimestamp(v.arrival).strftime(
+                                    + datetime.fromtimestamp(v.getArrival()).strftime(
                                         "%H:%M"
                                     )
                                     + ") → "
-                                    + v.destination
-                                    + " "
-                                    + str(v.location)
+                                    + v.getDestination()
+                                    + ", Curr location: "
+                                    + str(v.getLocation())
                                 )
-                        # gmap = gmplot.GoogleMapPlotter(v.location[0], v.location[1], 13)
-                        # gmap.marker(v.location[0], v.location[1], "cornflowerblue")
-                        # gmap.draw("map.html")
