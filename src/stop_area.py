@@ -1,4 +1,4 @@
-from tbm_api.utils import get_data_from_json
+from utils import get_data_from_json
 from urllib.parse import quote
 
 

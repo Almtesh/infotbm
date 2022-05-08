@@ -1,8 +1,8 @@
-from tbm_api.utils import get_data_from_json
+from utils import get_data_from_json
 from urllib.parse import quote
-from tbm_api.stop_point import StopPoint
+from stop_point import StopPoint
 from re import search
-from tbm_api.route import Route
+from route import Route
 
 
 INFO_URL = "https://ws.infotbm.com/ws/1.0/network/stoparea-informations/%s"

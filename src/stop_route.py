@@ -1,6 +1,6 @@
-from tbm_api.utils import get_data_from_json, hms2seconds
+from utils import get_data_from_json, hms2seconds
 from time import time
-from tbm_api.vehicle import Vehicle
+from vehicle import Vehicle
 
 
 SCHEDULE_URL = "https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s"
@@ -8,7 +8,7 @@ SCHEDULE_URL = "https://ws.infotbm.com/ws/1.0/get-realtime-pass/%d/%s"
 
 class Line:
     """
-    Information on the line served at a stop
+    Information on the line served at a stop.
     """
 
     def __init__(self, vehicles):
@@ -41,7 +41,7 @@ class StopRoute:
 
     def update(self, auto=False):
         """
-        Update data
+        Update data.
         """
 
         data = get_data_from_json(SCHEDULE_URL % (self.number, self.line))
@@ -80,7 +80,7 @@ class StopRoute:
 
     def data_age(self):
         """
-        Returns the age of the data
+        Returns the age of the data.
         """
 
         return time() - self.last_update

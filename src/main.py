@@ -1,7 +1,7 @@
 import sys
-from tbm_api.stop_area import *
-from tbm_api.stop import *
-from tbm_api.stop_route import StopRoute
+from stop_area import *
+from stop import *
+from stop_route import StopRoute
 from datetime import datetime
 
 

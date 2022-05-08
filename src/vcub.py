@@ -1,33 +1,17 @@
 """
-Provides all info about V³ stations
+Provides all info about V³ stations.
 """
 
-from tbm_api.utils import get_data_from_json
+from utils import get_data_from_json
 from time import time
+
 
 vcub_url = "https://ws.infotbm.com/ws/1.0/vcubs"
 
 
 class Vcub:
     """
-    Retrieves information from V³ stations
-
-    Data format, as returned by the infotbm website:
-    {
-            lists: [
-                    {
-                            'id': station number,
-                            'name': str,
-                            'connexionState': 'CONNECTED' if in service 'DISCONNECTED' otherwise,
-                            'typeVlsPlus': 'VLS_PLUS' if V³+ 'PAS_VLS_PLUS' otherwise,
-                            'nbPlaceAvailable': 33,
-                            'nbBikeAvailable': 0
-                            'nbElectricBikeAvailable': 6
-                            'latitude': float,
-                            'longitude': float,
-                    },
-            ]
-    }
+    Retrieves information from V³ stations.
     """
 
     def __init__(
@@ -49,9 +33,7 @@ class Vcub:
 
     def update(self, auto=False, data=None):
         """
-        Updates data
-        auto optionnal param is to set if a update is a automatic one,
-        and must be performed as defined in autoupdate_delay variable
+        Updates data.
         """
 
         if data is None or type(data) != dict:
@@ -77,14 +59,14 @@ class Vcub:
 
     def data_age(self):
         """
-        Computes the data's age
+        Computes the data's age.
         """
 
         return time() - self.last_update
 
     def get_names(self):
         """
-        Returns all names in a dict with id as data
+        Returns all names in a dict with id as data.
         """
 
         r = {}
@@ -94,7 +76,7 @@ class Vcub:
 
     def get_locations(self):
         """
-        Returns all locations in a dict with id as data
+        Returns all locations in a dict with id as data.
         """
 
         r = {}
@@ -104,7 +86,7 @@ class Vcub:
 
     def get_by_id(self, id):
         """
-        Returns a station by its id
+        Returns a station by its id.
         """
 
         class Station:

@@ -5,7 +5,7 @@ from urllib.error import HTTPError
 
 def get_data_from_json(url):
     """
-    Gets data from json at url
+    Gets data from json at url.
     """
 
     opener = request.build_opener()
@@ -17,7 +17,7 @@ def get_data_from_json(url):
 
 def hms2seconds(hhmmss):
     """
-    Convert H:M:S string to time in seconds
+    Convert H:M:S string to time in seconds.
     """
 
     try:
