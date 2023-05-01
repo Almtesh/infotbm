@@ -48,7 +48,6 @@ class StopRoute:
         if "destinations" in data:
             data = data["destinations"]
         else:
-            print("No data for stop %d" % self.number)
             return
         self.last_update = time()
         if type(data) == dict:
